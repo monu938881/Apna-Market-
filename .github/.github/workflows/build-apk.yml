@@ -1,0 +1,133 @@
+name: Build Apna Market APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  ANDROID_PACKAGE: com.apnamarket.app
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable'
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Add google-services.json if provided
+        run: |
+          if [ ! -f android/app/google-services.json ] && [ ! -z "${{ secrets.GOOGLE_SERVICES_JSON }}" ]; then
+            echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > android/app/google-services.json
+            echo "✅ google-services.json created from secrets"
+          else
+            echo "ℹ️ google-services.json already exists or not provided"
+          fi
+
+      - name: Setup keystore if provided
+        run: |
+          if [ ! -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/apna_release.keystore
+            echo "storeFile=apna_release.keystore" > android/key.properties
+            echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> android/key.properties
+            echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
+            echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
+          else
+            echo "No keystore provided, building debug APK"
+          fi
+
+      - name: Build APK
+        run: |
+          if [ ! -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            flutter build apk --release --no-shrink
+          else
+            flutter build apk --debug
+          fi
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ApnaMarket-APK
+          path: build/app/outputs/flutter-apk/*.apkname: Build Apna Market APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  ANDROID_PACKAGE: com.apnamarket.app
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable'
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Add google-services.json if provided
+        run: |
+          if [ ! -f android/app/google-services.json ] && [ ! -z "${{ secrets.GOOGLE_SERVICES_JSON }}" ]; then
+            echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > android/app/google-services.json
+            echo "✅ google-services.json created from secrets"
+          else
+            echo "ℹ️ google-services.json already exists or not provided"
+          fi
+
+      - name: Setup keystore if provided
+        run: |
+          if [ ! -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/apna_release.keystore
+            echo "storeFile=apna_release.keystore" > android/key.properties
+            echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> android/key.properties
+            echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
+            echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
+          else
+            echo " No keystore provided, building debug APK"
+          fi
+
+      - name: Build APK
+        run: |
+          if [ ! -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            flutter build apk --release --no-shrink
+          else
+            flutter build apk --debug
+          fi
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ApnaMarket-APK
+          path: build/app/outputs/flutter-apk/*.apk
